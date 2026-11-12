@@ -1,0 +1,24 @@
+# Flutter / Dart
+.dart_tool/
+.packages
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+*.iml
+*.lock.bak
+
+# Secrets - never commit
+.env
+.env.*
+!.env.example
+*.keystore
+*.jks
+key.properties
+google-services.json
+GoogleService-Info.plist
+supabase/.temp/
+
+# IDE / OS
+.idea/
+.vscode/
+.DS_Store
