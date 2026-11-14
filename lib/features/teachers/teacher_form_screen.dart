@@ -134,10 +134,10 @@ class _TeacherFormScreenState extends ConsumerState<TeacherFormScreen> {
     final res = await sb.functions.invoke('create-staff', body: {
       'email': _email.text.trim(),
       'full_name': _fullName.text.trim(),
-      'employee_id': _opt(_employeeId),
-      'designation': _opt(_designation),
-      'phone': _opt(_phone),
-      'bio': _opt(_bio),
+      'employee_id': _opt(_employeeId.text),
+      'designation': _opt(_designation.text),
+      'phone': _opt(_phone.text),
+      'bio': _opt(_bio.text),
       'department_id': _departmentId,
       'roles': _roles.toList(),
     });
@@ -150,10 +150,10 @@ class _TeacherFormScreenState extends ConsumerState<TeacherFormScreen> {
     final uid = sb.auth.currentUser!.id;
     await sb.from('profiles').update({
       'full_name': _fullName.text.trim(),
-      'employee_id': _opt(_employeeId),
-      'designation': _opt(_designation),
-      'phone': _opt(_phone),
-      'bio': _opt(_bio),
+      'employee_id': _opt(_employeeId.text),
+      'designation': _opt(_designation.text),
+      'phone': _opt(_phone.text),
+      'bio': _opt(_bio.text),
       'is_active': _isActive,
       'updated_by': uid,
     }).eq('id', widget.userId!);
