@@ -17,6 +17,9 @@ import 'features/notifications/notifications_screen.dart';
 import 'features/profile/profile_screen.dart';
 import 'features/tasks/tasks_screen.dart';
 import 'features/teachers/teachers_screen.dart';
+import 'features/teachers/teacher_form_screen.dart';
+import 'features/tasks/task_form_screen.dart';
+import 'features/meetings/meeting_form_screen.dart';
 
 /// Re-runs router redirects whenever the Supabase auth state changes.
 class _AuthRefresh extends ChangeNotifier {
@@ -59,6 +62,22 @@ final appRouter = GoRouter(
   routes: [
     GoRoute(path: '/setup', builder: (_, __) => const SetupRequiredScreen()),
     GoRoute(path: '/login', builder: (_, __) => const LoginScreen()),
+    // Full-screen forms (outside the bottom-nav shell)
+    GoRoute(path: '/tasks/new', builder: (_, __) => const TaskFormScreen()),
+    GoRoute(
+      path: '/tasks/:id/edit',
+      builder: (_, s) => TaskFormScreen(taskId: s.pathParameters['id']),
+    ),
+    GoRoute(path: '/meetings/new', builder: (_, __) => const MeetingFormScreen()),
+    GoRoute(
+      path: '/meetings/:id/edit',
+      builder: (_, s) => MeetingFormScreen(meetingId: s.pathParameters['id']),
+    ),
+    GoRoute(path: '/teachers/new', builder: (_, __) => const TeacherFormScreen()),
+    GoRoute(
+      path: '/teachers/:id/edit',
+      builder: (_, s) => TeacherFormScreen(userId: s.pathParameters['id']),
+    ),
     ShellRoute(
       builder: (context, state, child) => HomeShell(child: child),
       routes: [

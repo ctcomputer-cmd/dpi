@@ -1,19 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:go_router/go_router.dart';
 
-/// Staff directory with search. Read-only in this MVP.
-/// Creating accounts is done by an administrator through a server-side
-/// Edge Function (Phase 1 backlog); the client never creates users directly.
-final _teachersProvider = FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
-  final rows = await Supabase.instance.client
-      .from('profiles')
-      .select('id, full_name, designation, employee_id, email, is_active')
-      .isFilter('deleted_at', null)
-      .order('full_name', ascending: true)
-      .limit(500);
-  return List<Map<String, dynamic>>.from(rows as List);
-});
+import '../../shared/providers/directory_providers.dart';
 
 class TeachersScreen extends ConsumerStatefulWidget {
   const TeachersScreen({super.key});
@@ -25,15 +14,20 @@ class TeachersScreen extends ConsumerStatefulWidget {
 class _TeachersScreenState extends ConsumerState<TeachersScreen> {
   String _query = '';
 
-  static String _initial(String? name) =>
-      (name == null || name.isEmpty) ? '?' : name.substring(0, 1).toUpperCase();
-
   @override
   Widget build(BuildContext context) {
-    final teachers = ref.watch(_teachersProvider);
+    final staff = ref.watch(staffListProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Teachers / শিক্ষক')),
+      appBar: AppBar(title: const Text('Staff / কর্মী')),
+      floatingActionButton: FloatingActionButton.extended(
+        icon: const Icon(Icons.person_add_alt_1),
+        label: const Text('Add / যোগ করুন'),
+        onPressed: () async {
+          await context.push('/teachers/new');
+          ref.invalidate(staffListProvider);
+        },
+      ),
       body: Column(
         children: [
           Padding(
@@ -47,18 +41,18 @@ class _TeachersScreenState extends ConsumerState<TeachersScreen> {
             ),
           ),
           Expanded(
-            child: teachers.when(
+            child: staff.when(
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (_, __) => Center(
                 child: TextButton(
-                  onPressed: () => ref.invalidate(_teachersProvider),
+                  onPressed: () => ref.invalidate(staffListProvider),
                   child: const Text('Could not load. Retry / আবার'),
                 ),
               ),
               data: (all) {
                 final items = all.where((t) {
                   if (_query.isEmpty) return true;
-                  return [t['full_name'], t['employee_id'], t['designation']]
+                  return [t.fullName, t.employeeId, t.designation]
                       .whereType<String>()
                       .any((s) => s.toLowerCase().contains(_query));
                 }).toList();
@@ -67,25 +61,27 @@ class _TeachersScreenState extends ConsumerState<TeachersScreen> {
                   return const Center(child: Text('No matching staff. / মিল পাওয়া যায়নি।'));
                 }
                 return ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 96),
                   itemCount: items.length,
                   itemBuilder: (_, i) {
                     final t = items[i];
-                    final active = t['is_active'] as bool? ?? false;
+                    final initial = t.fullName.isEmpty ? '?' : t.fullName.substring(0, 1);
                     return Card(
                       child: ListTile(
-                        leading: CircleAvatar(
-                          child: Text(_initial(t['full_name'] as String?)),
-                        ),
-                        title: Text(t['full_name'] as String? ?? ''),
+                        leading: CircleAvatar(child: Text(initial)),
+                        title: Text(t.fullName),
                         subtitle: Text([
-                          if (t['designation'] != null) t['designation'],
-                          if (t['employee_id'] != null) 'ID: ${t['employee_id']}',
+                          if (t.designation != null) t.designation,
+                          if (t.employeeId != null) 'ID: ${t.employeeId}',
                         ].join(' • ')),
                         trailing: Chip(
-                          label: Text(active ? 'Active' : 'Inactive',
+                          label: Text(t.isActive ? 'Active' : 'Inactive',
                               style: const TextStyle(fontSize: 11)),
                         ),
+                        onTap: () async {
+                          await context.push('/teachers/${t.id}/edit');
+                          ref.invalidate(staffListProvider);
+                        },
                       ),
                     );
                   },

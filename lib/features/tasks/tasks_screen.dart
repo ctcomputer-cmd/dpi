@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../core/theme.dart';
@@ -14,6 +15,14 @@ class TasksScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(title: const Text('Tasks / কাজ')),
+      floatingActionButton: FloatingActionButton.extended(
+        icon: const Icon(Icons.add),
+        label: const Text('New / নতুন'),
+        onPressed: () async {
+          await context.push('/tasks/new');
+          ref.invalidate(taskListProvider);
+        },
+      ),
       body: RefreshIndicator(
         onRefresh: () async => ref.refresh(taskListProvider.future),
         child: tasks.when(
@@ -40,7 +49,13 @@ class TasksScreen extends ConsumerWidget {
               padding: const EdgeInsets.all(16),
               itemCount: items.length,
               separatorBuilder: (_, __) => const SizedBox(height: 8),
-              itemBuilder: (_, i) => _TaskTile(item: items[i]),
+              itemBuilder: (_, i) => _TaskTile(
+                item: items[i],
+                onTap: () async {
+                  await context.push('/tasks/${items[i].id}/edit');
+                  ref.invalidate(taskListProvider);
+                },
+              ),
             );
           },
         ),
@@ -50,9 +65,10 @@ class TasksScreen extends ConsumerWidget {
 }
 
 class _TaskTile extends StatelessWidget {
-  const _TaskTile({required this.item});
+  const _TaskTile({required this.item, this.onTap});
 
   final TaskItem item;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -63,6 +79,7 @@ class _TaskTile extends StatelessWidget {
 
     return Card(
       child: ListTile(
+        onTap: onTap,
         title: Text(item.title, style: const TextStyle(fontWeight: FontWeight.w600)),
         subtitle: Text(
           [
