@@ -41,6 +41,19 @@ if ! grep -q "android.permission.INTERNET" "$MANIFEST"; then
   sed -i "s#<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\">#&\n    <uses-permission android:name=\"android.permission.INTERNET\"/>#" "$MANIFEST"
 fi
 
+echo "==> Disabling the release lint-vital check (a known Lint crash in url_launcher_android)"
+ROOT_GRADLE="$PROJECT_DIR/android/build.gradle.kts"
+[ -f "$ROOT_GRADLE" ] || ROOT_GRADLE="$PROJECT_DIR/android/build.gradle"
+cat >> "$ROOT_GRADLE" <<'GRADLE'
+
+// DPI: skip lintVital tasks; the Lint tool crashes on some plugin sources.
+subprojects {
+    tasks.matching { it.name.contains("lintVital") }.configureEach {
+        enabled = false
+    }
+}
+GRADLE
+
 echo "==> Fetching Dart packages"
 cd "$PROJECT_DIR"
 flutter pub get
