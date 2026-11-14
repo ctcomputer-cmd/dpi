@@ -192,12 +192,12 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
     try {
       // Soft delete: RLS allows managers to update; the row stays for audit.
       await Supabase.instance.client
-          .from('tasks')
-          .update({'deleted_at': DateTime.now().toUtc().toIso8601String()})
-          .eq('id', widget.taskId!);
+          .rpc('soft_delete_task', params: {'p_id': widget.taskId!});
       ref.invalidate(taskListProvider);
       ref.invalidate(dashboardStatsProvider);
       if (mounted) context.pop();
+    } on PostgrestException catch (e) {
+      setState(() => _error = 'Could not delete: ${e.message}');
     } catch (_) {
       setState(() => _error = 'Could not delete. / মুছে ফেলা যায়নি।');
     } finally {

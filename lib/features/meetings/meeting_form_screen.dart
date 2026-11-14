@@ -185,11 +185,11 @@ class _MeetingFormScreenState extends ConsumerState<MeetingFormScreen> {
     setState(() => _saving = true);
     try {
       await Supabase.instance.client
-          .from('meetings')
-          .update({'deleted_at': DateTime.now().toUtc().toIso8601String()})
-          .eq('id', widget.meetingId!);
+          .rpc('soft_delete_meeting', params: {'p_id': widget.meetingId!});
       ref.invalidate(upcomingMeetingsProvider);
       if (mounted) context.pop();
+    } on PostgrestException catch (e) {
+      setState(() => _error = 'Could not delete: ${e.message}');
     } catch (_) {
       setState(() => _error = 'Could not delete. / মুছে ফেলা যায়নি।');
     } finally {
