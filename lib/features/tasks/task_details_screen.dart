@@ -36,7 +36,7 @@ final taskDetailProvider =
   final t = await _sb.from('tasks').select().eq('id', id).single();
   final a = await _sb
       .from('task_assignees')
-      .select('user_id, progress_percent, status, submission_note, submitted_at, review_note, profiles(full_name)')
+      .select('user_id, progress_percent, status, submission_note, submitted_at, review_note, profiles!task_assignees_user_id_fkey(full_name)')
       .eq('task_id', id);
   final c = await _sb
       .from('task_comments')
