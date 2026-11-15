@@ -14,7 +14,6 @@ build/
 *.keystore
 *.jks
 key.properties
-google-services.json
 GoogleService-Info.plist
 supabase/.temp/
 

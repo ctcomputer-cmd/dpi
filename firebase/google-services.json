@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "744184554320",
+    "project_id": "gen-lang-client-0226290691",
+    "storage_bucket": "gen-lang-client-0226290691.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:744184554320:android:d88c4fec9f16650b094255",
+        "android_client_info": {
+          "package_name": "bd.ac.dpi.departmenthub"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "744184554320-9mcklm321pkmc97bnm0nocjq22ddvc74.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAfT5Ll6bBkMIrzRh6FBHxjY7CwRlW33OE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "744184554320-9mcklm321pkmc97bnm0nocjq22ddvc74.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
