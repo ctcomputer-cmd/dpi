@@ -52,7 +52,7 @@ class TasksScreen extends ConsumerWidget {
               itemBuilder: (_, i) => _TaskTile(
                 item: items[i],
                 onTap: () async {
-                  await context.push('/tasks/${items[i].id}/edit');
+                  await context.push('/tasks/${items[i].id}');
                   ref.invalidate(taskListProvider);
                 },
               ),

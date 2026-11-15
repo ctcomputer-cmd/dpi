@@ -21,7 +21,28 @@ class NotificationsScreen extends ConsumerWidget {
     final items = ref.watch(notificationListProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Notifications / বিজ্ঞপ্তি')),
+      appBar: AppBar(
+        title: const Text('Notifications / বিজ্ঞপ্তি'),
+        actions: [
+          IconButton(
+            tooltip: 'Mark all read / সব পড়া হয়েছে',
+            icon: const Icon(Icons.done_all),
+            onPressed: () async {
+              try {
+                // RLS limits this to the user's own notifications.
+                await Supabase.instance.client
+                    .from('notifications')
+                    .update({'is_read': true})
+                    .eq('is_read', false);
+                ref.invalidate(notificationListProvider);
+              } catch (_) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Could not update. / আপডেট হয়নি।')));
+              }
+            },
+          ),
+        ],
+      ),
       body: RefreshIndicator(
         onRefresh: () async => ref.refresh(notificationListProvider.future),
         child: items.when(
