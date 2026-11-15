@@ -313,8 +313,21 @@ class _TaskDetailsScreenState extends ConsumerState<TaskDetailsScreen> {
       ),
       body: detailAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (_, __) => Center(
-          child: TextButton(onPressed: _refresh, child: const Text('Could not load. Retry')),
+        error: (e, __) => Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text('Could not load. / লোড হয়নি।'),
+                const SizedBox(height: 8),
+                Text('$e', style: const TextStyle(fontSize: 12, color: Colors.black54),
+                    textAlign: TextAlign.center),
+                const SizedBox(height: 12),
+                TextButton(onPressed: _refresh, child: const Text('Retry / আবার')),
+              ],
+            ),
+          ),
         ),
         data: (d) {
           final t = d.task;
