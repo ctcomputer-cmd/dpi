@@ -8,14 +8,15 @@ import '../../core/theme.dart';
 import '../../shared/providers/data_providers.dart';
 import '../../shared/providers/directory_providers.dart';
 
-/// Tasks where the signed-in user is an assignee, with their own progress.
+/// Tasks where the signed-in user is an assignee. Progress is the task's overall
+/// progress, the same number the task details page shows.
 final myAssignedTasksProvider =
     FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
   final uid = Supabase.instance.client.auth.currentUser?.id;
   if (uid == null) return <Map<String, dynamic>>[];
   final rows = await Supabase.instance.client
       .from('task_assignees')
-      .select('progress_percent, status, tasks(id, title, deadline, status, deleted_at)')
+      .select('tasks(id, title, deadline, status, deleted_at, progress_percent)')
       .eq('user_id', uid)
       .limit(100);
   return List<Map<String, dynamic>>.from(rows as List).where((r) {
@@ -63,7 +64,8 @@ class MyTasksSection extends ConsumerWidget {
                     child: ListTile(
                       title: Text((r['tasks'] as Map)['title'] as String),
                       subtitle: Text(
-                          '${prettyLabel(r['status'] as String)} • ${r['progress_percent']}%'),
+                          '${prettyLabel((r['tasks'] as Map)['status'] as String)} • '
+                          '${(r['tasks'] as Map)['progress_percent'] ?? 0}%'),
                       trailing: const Icon(Icons.chevron_right),
                       onTap: () => context.go('/tasks/${(r['tasks'] as Map)['id']}'),
                     ),

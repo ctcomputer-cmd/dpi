@@ -149,7 +149,10 @@ class TaskDetail {
   static List<Map<String, dynamic>> assigneesOf(Map<String, dynamic> subtask) =>
       asRows(subtask['subtask_assignees']);
 
+  /// Stored by the database (same value as the dashboard); computed as a fallback.
   int get overallProgress {
+    final stored = task['progress_percent'];
+    if (stored is int) return stored;
     final all = [for (final s in subtasks) ...assigneesOf(s)];
     return avgProgress(all);
   }
