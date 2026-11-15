@@ -61,9 +61,9 @@ cat >> "$ROOT_GRADLE" <<'GRADLE'
 
 // DPI: every Android module compiles against API 36.
 subprojects {
-    plugins.withId("com.android.library") {
-        extensions.configure<com.android.build.gradle.LibraryExtension> {
-            compileSdk = 36
+    if (name != "app") {
+        afterEvaluate {
+            extensions.findByType(com.android.build.gradle.BaseExtension::class.java)?.compileSdkVersion(36)
         }
     }
 }
@@ -73,9 +73,9 @@ cat >> "$ROOT_GRADLE" <<'GRADLE'
 
 // DPI: every Android module compiles against API 36.
 subprojects {
-    plugins.withId('com.android.library') {
-        android {
-            compileSdk 36
+    if (name != 'app') {
+        afterEvaluate {
+            extensions.findByType(com.android.build.gradle.BaseExtension)?.compileSdkVersion(36)
         }
     }
 }
