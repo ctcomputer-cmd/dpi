@@ -131,6 +131,17 @@ class _TaskDetailsScreenState extends ConsumerState<TaskDetailsScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Task / কাজ'),
+        leading: IconButton(
+          tooltip: 'Back / পিছনে',
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              context.go('/tasks');
+            }
+          },
+        ),
         actions: [
           if (canManage)
             IconButton(

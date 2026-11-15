@@ -67,7 +67,7 @@ class MyTasksSection extends ConsumerWidget {
                           '${prettyLabel((r['tasks'] as Map)['status'] as String)} • '
                           '${(r['tasks'] as Map)['progress_percent'] ?? 0}%'),
                       trailing: const Icon(Icons.chevron_right),
-                      onTap: () => context.go('/tasks/${(r['tasks'] as Map)['id']}'),
+                      onTap: () => context.push('/tasks/${(r['tasks'] as Map)['id']}'),
                     ),
                   ),
               ],
@@ -90,7 +90,7 @@ class MyTasksSection extends ConsumerWidget {
                     subtitle: Text(
                         'Due ${DateFormat('dd MMM yyyy').format(t.deadline!.toLocal())}'),
                     trailing: const Icon(Icons.chevron_right),
-                    onTap: () => context.go('/tasks/${t.id}'),
+                    onTap: () => context.push('/tasks/${t.id}'),
                   ),
                 ),
             ],

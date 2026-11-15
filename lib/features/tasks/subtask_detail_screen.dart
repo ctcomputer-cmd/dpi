@@ -180,6 +180,17 @@ class _SubtaskDetailScreenState extends ConsumerState<SubtaskDetailScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Sub-task / উপ-কাজ'),
+        leading: IconButton(
+          tooltip: 'Back / পিছনে',
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              context.go('/home');
+            }
+          },
+        ),
         actions: [
           if (canManage)
             IconButton(
