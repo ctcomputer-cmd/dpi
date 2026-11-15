@@ -232,6 +232,7 @@ class _TaskDetailsScreenState extends ConsumerState<TaskDetailsScreen> {
                 const SizedBox(height: 12),
                 Text(desc),
               ],
+              if (canManage) ...[
               const SizedBox(height: 16),
               Row(
                 children: [
@@ -250,6 +251,7 @@ class _TaskDetailsScreenState extends ConsumerState<TaskDetailsScreen> {
                 '${d.subtasks.length} টির মধ্যে ${d.completedSubtasks} টি সম্পন্ন',
                 style: const TextStyle(fontSize: 12),
               ),
+              ],
             ],
           ),
         ),
@@ -344,7 +346,8 @@ class _TaskDetailsScreenState extends ConsumerState<TaskDetailsScreen> {
       const SizedBox(height: 12),
 
       // ---- Activity ----
-      ExpansionTile(
+      if (canManage)
+        ExpansionTile(
         tilePadding: EdgeInsets.zero,
         title: Text('Activity / কার্যক্রম',
             style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
