@@ -79,7 +79,7 @@ class _TeachersScreenState extends ConsumerState<TeachersScreen> {
                               style: const TextStyle(fontSize: 11)),
                         ),
                         onTap: () async {
-                          await context.push('/teachers/${t.id}/edit');
+                          await context.push('/teachers/${t.id}');
                           ref.invalidate(staffListProvider);
                         },
                       ),

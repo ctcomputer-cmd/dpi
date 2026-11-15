@@ -18,6 +18,7 @@ import 'features/profile/profile_screen.dart';
 import 'features/tasks/tasks_screen.dart';
 import 'features/teachers/teachers_screen.dart';
 import 'features/teachers/teacher_form_screen.dart';
+import 'features/teachers/teacher_profile_screen.dart';
 import 'features/tasks/task_form_screen.dart';
 import 'features/tasks/task_details_screen.dart';
 import 'features/meetings/meeting_form_screen.dart';
@@ -79,6 +80,10 @@ final appRouter = GoRouter(
       builder: (_, s) => MeetingFormScreen(meetingId: s.pathParameters['id']),
     ),
     GoRoute(path: '/teachers/new', builder: (_, __) => const TeacherFormScreen()),
+    GoRoute(
+      path: '/teachers/:id',
+      builder: (_, s) => TeacherProfileScreen(userId: s.pathParameters['id']!),
+    ),
     GoRoute(
       path: '/teachers/:id/edit',
       builder: (_, s) => TeacherFormScreen(userId: s.pathParameters['id']),

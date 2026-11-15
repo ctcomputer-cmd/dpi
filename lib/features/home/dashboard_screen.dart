@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/theme.dart';
 import '../../shared/providers/data_providers.dart';
 import '../../shared/providers/directory_providers.dart';
+import 'my_tasks_section.dart';
 
 /// Dashboard: counts come from the database. RLS limits rows to what the user may see.
 class DashboardScreen extends ConsumerWidget {
@@ -43,6 +44,8 @@ class DashboardScreen extends ConsumerWidget {
                   _StatCard('Overdue / মেয়াদোত্তীর্ণ', s.overdueTasks, Icons.warning_amber, AppColors.error),
                 ],
               ),
+              const SizedBox(height: 20),
+              const MyTasksSection(),
               const SizedBox(height: 20),
               Text('Quick actions / দ্রুত কাজ',
                   style: Theme.of(context).textTheme.titleMedium),
