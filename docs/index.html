@@ -29,7 +29,7 @@
 <body>
   <main>
     <h1>DPI Department Hub</h1>
-    <p id="intro"><strong>আপনার অ্যাকাউন্ট তৈরি হয়েছে / Your account is ready.</strong></p>
+    <p id="intro"><strong>অ্যাকাউন্ট সেটআপ / Account setup</strong></p>
 
     <!-- Shown only after the invite / reset link has been verified -->
     <form id="setForm">
@@ -68,13 +68,38 @@
       msg.className = ok ? 'ok' : 'err';
     }
 
+    function showForm() {
+      form.style.display = 'block';
+      intro.innerHTML = '<strong>অ্যাকাউন্ট যাচাই হয়েছে / Account verified.</strong>';
+    }
+
+    // Read the link BEFORE the client removes it from the address bar.
+    const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+    const queryParams = new URLSearchParams(window.location.search);
+    const linkError = hashParams.get('error_description') || queryParams.get('error_description');
+    const hadTokens = hashParams.has('access_token') || queryParams.has('code');
+
+    if (linkError) {
+      intro.style.display = 'none';
+      show('লিংকটি কাজ করছে না / Link problem: ' + linkError.replace(/\+/g, ' '), false);
+    }
+
     // When the invite or recovery link is verified, Supabase creates a session.
     sb.auth.onAuthStateChange((event, session) => {
-      if (session && (event === 'PASSWORD_RECOVERY' || event === 'SIGNED_IN')) {
-        form.style.display = 'block';
-        intro.innerHTML = '<strong>অ্যাকাউন্ট যাচাই হয়েছে / Account verified.</strong>';
-      }
+      if (session && (event === 'PASSWORD_RECOVERY' || event === 'SIGNED_IN')) showForm();
     });
+
+    (async () => {
+      const { data } = await sb.auth.getSession();
+      if (data.session) {
+        showForm();
+      } else if (!linkError && !hadTokens) {
+        intro.style.display = 'none';
+        show('এই ঠিকানায় যাচাইয়ের তথ্য নেই। ইমেইলের লিংকে আবার ক্লিক করুন। / No verification data here. Open the link from your email again.', false);
+      } else if (!linkError) {
+        show('যাচাই সম্পন্ন হয়নি। নতুন লিংক নিন। / Verification incomplete. Request a new link.', false);
+      }
+    })();
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
