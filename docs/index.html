@@ -5,25 +5,95 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>DPI Department Hub</title>
   <style>
-    :root { --primary:#142D4E; --bg:#F5F7FA; --text:#1f2937; }
+    :root { --primary:#142D4E; --bg:#F5F7FA; --text:#1f2937; --card:#ffffff; --err:#DC2626; --ok:#16A34A; }
     @media (prefers-color-scheme: dark) {
-      :root { --bg:#0f172a; --text:#e5e7eb; }
+      :root { --bg:#0f172a; --text:#e5e7eb; --card:#1e293b; }
     }
     body { margin:0; min-height:100vh; display:flex; align-items:center; justify-content:center;
-           background:var(--bg); color:var(--text); font-family:system-ui,sans-serif; }
-    main { max-width:420px; padding:24px; text-align:center; }
+           background:var(--bg); color:var(--text); font-family:system-ui,sans-serif; padding:16px; box-sizing:border-box; }
+    main { width:100%; max-width:420px; background:var(--card); border-radius:16px; padding:24px;
+           box-shadow:0 2px 12px rgba(0,0,0,.08); text-align:center; }
     h1 { color:var(--primary); font-size:1.4rem; margin:0 0 12px; }
     p { line-height:1.6; margin:8px 0; }
     .small { font-size:.9rem; opacity:.75; }
+    form { display:none; text-align:left; margin-top:16px; }
+    label { display:block; margin:10px 0 4px; font-size:.9rem; }
+    input { width:100%; box-sizing:border-box; padding:12px; border:1px solid #cbd5e1; border-radius:10px; font-size:1rem; }
+    button { width:100%; margin-top:16px; padding:12px; border:0; border-radius:10px; background:var(--primary);
+             color:#fff; font-size:1rem; cursor:pointer; }
+    button:disabled { opacity:.6; }
+    #msg { margin-top:12px; font-size:.95rem; min-height:1.2em; }
+    .err { color:var(--err); } .ok { color:var(--ok); }
   </style>
 </head>
 <body>
   <main>
     <h1>DPI Department Hub</h1>
-    <p><strong>আপনার অ্যাকাউন্ট তৈরি হয়েছে / Your account is ready.</strong></p>
-    <p>এখন মোবাইলে DPI Department Hub অ্যাপটি খুলে আপনার ইমেইল ও পাসওয়ার্ড দিয়ে লগইন করুন।</p>
-    <p class="small">Open the DPI Department Hub app on your phone and sign in with your email and password.</p>
+    <p id="intro"><strong>আপনার অ্যাকাউন্ট তৈরি হয়েছে / Your account is ready.</strong></p>
+
+    <!-- Shown only after the invite / reset link has been verified -->
+    <form id="setForm">
+      <p class="small">নিচে একটি পাসওয়ার্ড দিন (কমপক্ষে ৮ অক্ষর)। / Choose a password (at least 8 characters).</p>
+      <label for="pw1">Password / পাসওয়ার্ড</label>
+      <input id="pw1" type="password" autocomplete="new-password" required minlength="8">
+      <label for="pw2">Confirm password / নিশ্চিত করুন</label>
+      <input id="pw2" type="password" autocomplete="new-password" required minlength="8">
+      <button id="saveBtn" type="submit">Save password / পাসওয়ার্ড সেভ করুন</button>
+    </form>
+
+    <div id="msg"></div>
+
+    <p id="after" style="display:none">এখন মোবাইলে DPI Department Hub অ্যাপটি খুলে আপনার ইমেইল ও নতুন পাসওয়ার্ড দিয়ে লগইন করুন।</p>
     <p class="small">Daffodil Polytechnic Institute</p>
   </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+  <script>
+    // Public values only (anon key is safe to expose; never put service_role here).
+    const SUPABASE_URL = 'https://sygirbomlyuaouxosqid.supabase.co';
+    const SUPABASE_ANON_KEY = 'PASTE_ANON_KEY_HERE';
+
+    const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      auth: { detectSessionInUrl: true, flowType: 'implicit' }
+    });
+
+    const form = document.getElementById('setForm');
+    const msg = document.getElementById('msg');
+    const btn = document.getElementById('saveBtn');
+    const intro = document.getElementById('intro');
+    const after = document.getElementById('after');
+
+    function show(text, ok) {
+      msg.textContent = text;
+      msg.className = ok ? 'ok' : 'err';
+    }
+
+    // When the invite or recovery link is verified, Supabase creates a session.
+    sb.auth.onAuthStateChange((event, session) => {
+      if (session && (event === 'PASSWORD_RECOVERY' || event === 'SIGNED_IN')) {
+        form.style.display = 'block';
+        intro.innerHTML = '<strong>অ্যাকাউন্ট যাচাই হয়েছে / Account verified.</strong>';
+      }
+    });
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const a = document.getElementById('pw1').value;
+      const b = document.getElementById('pw2').value;
+      if (a.length < 8) return show('Password must be at least 8 characters.', false);
+      if (a !== b) return show('Passwords do not match.', false);
+
+      btn.disabled = true;
+      const { error } = await sb.auth.updateUser({ password: a });
+      btn.disabled = false;
+
+      if (error) return show('Could not save: ' + error.message, false);
+
+      form.style.display = 'none';
+      show('পাসওয়ার্ড সেভ হয়েছে / Password saved.', true);
+      after.style.display = 'block';
+      await sb.auth.signOut();
+    });
+  </script>
 </body>
 </html>
