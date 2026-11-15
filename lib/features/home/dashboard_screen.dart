@@ -67,6 +67,11 @@ class DashboardScreen extends ConsumerWidget {
                         avatar: const Icon(Icons.person_add_alt_1, size: 18),
                         label: const Text('Staff / কর্মী'),
                         onPressed: () => context.go('/teachers')),
+                  if (isAdmin)
+                    ActionChip(
+                        avatar: const Icon(Icons.bar_chart, size: 18),
+                        label: const Text('Reports / রিপোর্ট'),
+                        onPressed: () => context.push('/reports')),
                 ],
               ),
             ],

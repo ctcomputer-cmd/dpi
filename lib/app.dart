@@ -23,6 +23,7 @@ import 'features/tasks/task_form_screen.dart';
 import 'features/tasks/task_details_screen.dart';
 import 'features/tasks/subtask_detail_screen.dart';
 import 'features/tasks/subtask_form_screen.dart';
+import 'features/reports/reports_screen.dart';
 import 'features/meetings/meeting_form_screen.dart';
 
 /// Re-runs router redirects whenever the Supabase auth state changes.
@@ -108,6 +109,7 @@ final appRouter = GoRouter(
       path: '/teachers/:id/edit',
       builder: (_, s) => TeacherFormScreen(userId: s.pathParameters['id']),
     ),
+    GoRoute(path: '/reports', builder: (_, __) => const ReportsScreen()),
     ShellRoute(
       builder: (context, state, child) => HomeShell(child: child),
       routes: [

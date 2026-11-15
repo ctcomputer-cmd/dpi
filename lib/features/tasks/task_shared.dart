@@ -68,6 +68,8 @@ StateStyle stateStyle(String state) {
       return StateStyle('In progress / চলছে', AppColors.secondary, Icons.autorenew);
     case 'unassigned':
       return StateStyle('Not assigned / বরাদ্দ নেই', const Color(0xFF64748B), Icons.person_off_outlined);
+    case 'overdue':
+      return StateStyle('Overdue / মেয়াদোত্তীর্ণ', AppColors.error, Icons.warning_amber);
     case 'cancelled':
       return StateStyle('Cancelled / বাতিল', Colors.grey, Icons.cancel_outlined);
     default:
