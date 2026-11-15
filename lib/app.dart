@@ -21,6 +21,8 @@ import 'features/teachers/teacher_form_screen.dart';
 import 'features/teachers/teacher_profile_screen.dart';
 import 'features/tasks/task_form_screen.dart';
 import 'features/tasks/task_details_screen.dart';
+import 'features/tasks/subtask_detail_screen.dart';
+import 'features/tasks/subtask_form_screen.dart';
 import 'features/meetings/meeting_form_screen.dart';
 
 /// Re-runs router redirects whenever the Supabase auth state changes.
@@ -69,6 +71,24 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/tasks/:id/edit',
       builder: (_, s) => TaskFormScreen(taskId: s.pathParameters['id']),
+    ),
+    GoRoute(
+      path: '/tasks/:id/subtasks/new',
+      builder: (_, s) => SubtaskFormScreen(taskId: s.pathParameters['id']!),
+    ),
+    GoRoute(
+      path: '/tasks/:id/subtasks/:sid/edit',
+      builder: (_, s) => SubtaskFormScreen(
+        taskId: s.pathParameters['id']!,
+        subtaskId: s.pathParameters['sid'],
+      ),
+    ),
+    GoRoute(
+      path: '/tasks/:id/subtasks/:sid',
+      builder: (_, s) => SubtaskDetailScreen(
+        taskId: s.pathParameters['id']!,
+        subtaskId: s.pathParameters['sid']!,
+      ),
     ),
     GoRoute(
       path: '/tasks/:id',

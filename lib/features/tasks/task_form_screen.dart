@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../shared/providers/data_providers.dart';
 import '../../shared/providers/directory_providers.dart';
+import 'task_shared.dart';
 
-/// Create, edit and (soft) delete a task. Every write is checked by RLS.
+/// Create or edit the main task. People and deadlines are set per sub-task.
 class TaskFormScreen extends ConsumerStatefulWidget {
   const TaskFormScreen({super.key, this.taskId});
 
@@ -27,8 +27,6 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
   String _priority = 'medium';
   String _status = 'not_started';
   DateTime? _deadline;
-  final Set<String> _assignees = {};
-  final Set<String> _originalAssignees = {};
 
   bool _loading = false;
   bool _saving = false;
@@ -53,10 +51,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
   Future<void> _load() async {
     setState(() => _loading = true);
     try {
-      final sb = Supabase.instance.client;
-      final t = await sb.from('tasks').select().eq('id', widget.taskId!).single();
-      final a = await sb.from('task_assignees').select('user_id').eq('task_id', widget.taskId!);
-
+      final t = await taskSb.from('tasks').select().eq('id', widget.taskId!).single();
       _title.text = t['title'] as String;
       _description.text = (t['description'] as String?) ?? '';
       _category.text = (t['category'] as String?) ?? '';
@@ -66,13 +61,8 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
       _deadline = t['deadline'] == null
           ? null
           : DateTime.parse(t['deadline'] as String).toLocal();
-      for (final r in a as List) {
-        final id = r['user_id'] as String;
-        _assignees.add(id);
-        _originalAssignees.add(id);
-      }
-    } catch (_) {
-      _error = 'Could not load task. / কাজ লোড হয়নি।';
+    } catch (e) {
+      _error = 'Could not load task. / কাজ লোড হয়নি। ${errorText(e)}';
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -96,11 +86,9 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
       _error = null;
     });
 
-    final sb = Supabase.instance.client;
-    final uid = sb.auth.currentUser!.id;
+    final uid = taskMe;
     final desc = _description.text.trim();
     final cat = _category.text.trim();
-
     final data = <String, dynamic>{
       'title': _title.text.trim(),
       'description': desc.isEmpty ? null : desc,
@@ -117,53 +105,30 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
     };
 
     try {
-      var taskId = widget.taskId ?? '';
       if (_isEdit) {
-        await sb.from('tasks').update(data).eq('id', taskId);
+        await taskSb.from('tasks').update(data).eq('id', widget.taskId!);
+        await logTaskActivity(widget.taskId!, 'updated', {'status': _status, 'priority': _priority});
+        ref.invalidate(taskListProvider);
+        ref.invalidate(dashboardStatsProvider);
+        ref.invalidate(taskDetailProvider(widget.taskId!));
+        if (!mounted) return;
+        if (context.canPop()) context.pop();
       } else {
-        final row = await sb
+        final row = await taskSb
             .from('tasks')
             .insert({...data, 'created_by': uid})
             .select('id')
             .single();
-        taskId = row['id'] as String;
+        final newId = row['id'] as String;
+        await logTaskActivity(newId, 'created', {'status': _status, 'priority': _priority});
+        ref.invalidate(taskListProvider);
+        ref.invalidate(dashboardStatsProvider);
+        if (!mounted) return;
+        // Go straight to the new task so sub-tasks can be added.
+        context.pushReplacement('/tasks/$newId');
       }
-
-      // Sync assignees: each new teacher gets their own progress row.
-      final toRemove = _originalAssignees.difference(_assignees).toList();
-      final toAdd = _assignees.difference(_originalAssignees).toList();
-      if (toRemove.isNotEmpty) {
-        await sb
-            .from('task_assignees')
-            .delete()
-            .eq('task_id', taskId)
-            .inFilter('user_id', toRemove);
-      }
-      if (toAdd.isNotEmpty) {
-        await sb.from('task_assignees').insert(toAdd
-            .map((id) => {
-                  'task_id': taskId,
-                  'user_id': id,
-                  'progress_percent': 0,
-                  'status': 'not_started',
-                })
-            .toList());
-      }
-
-      await sb.from('task_activity_logs').insert({
-        'task_id': taskId,
-        'actor_id': uid,
-        'action': _isEdit ? 'updated' : 'created',
-        'details': {'status': _status, 'priority': _priority},
-      });
-
-      ref.invalidate(taskListProvider);
-      ref.invalidate(dashboardStatsProvider);
-      if (mounted) context.pop();
-    } on PostgrestException catch (e) {
-      setState(() => _error = 'Could not save: ${e.message}');
-    } catch (_) {
-      setState(() => _error = 'Network error. / নেটওয়ার্ক সমস্যা।');
+    } catch (e) {
+      if (mounted) setState(() => _error = 'Could not save: ${errorText(e)}');
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -190,16 +155,17 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
 
     setState(() => _saving = true);
     try {
-      // Soft delete: RLS allows managers to update; the row stays for audit.
-      await Supabase.instance.client
-          .rpc('soft_delete_task', params: {'p_id': widget.taskId!});
+      await taskSb.rpc('soft_delete_task', params: {'p_id': widget.taskId!});
       ref.invalidate(taskListProvider);
       ref.invalidate(dashboardStatsProvider);
-      if (mounted) context.pop();
-    } on PostgrestException catch (e) {
-      setState(() => _error = 'Could not delete: ${e.message}');
-    } catch (_) {
-      setState(() => _error = 'Could not delete. / মুছে ফেলা যায়নি।');
+      if (!mounted) return;
+      if (context.canPop()) {
+        context.pop();
+      } else {
+        context.go('/tasks');
+      }
+    } catch (e) {
+      if (mounted) setState(() => _error = 'Could not delete: ${errorText(e)}');
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -208,7 +174,6 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
   @override
   Widget build(BuildContext context) {
     final departments = ref.watch(departmentListProvider);
-    final staff = ref.watch(staffListProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -229,6 +194,18 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
               child: ListView(
                 padding: const EdgeInsets.all(16),
                 children: [
+                  if (!_isEdit)
+                    Card(
+                      color: Theme.of(context).colorScheme.primaryContainer,
+                      child: const Padding(
+                        padding: EdgeInsets.all(12),
+                        child: Text(
+                          'After saving, add sub-tasks and assign people with a deadline for each. / সেভ করার পর উপ-কাজ যোগ করে প্রত্যেকের জন্য মানুষ ও সময়সীমা দিন।',
+                          style: TextStyle(fontSize: 13),
+                        ),
+                      ),
+                    ),
+                  const SizedBox(height: 12),
                   TextFormField(
                     controller: _title,
                     decoration: const InputDecoration(labelText: 'Title / শিরোনাম *'),
@@ -288,39 +265,12 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
                   ListTile(
                     contentPadding: EdgeInsets.zero,
                     leading: const Icon(Icons.event),
-                    title: const Text('Deadline / শেষ তারিখ'),
+                    title: const Text('Overall deadline / শেষ তারিখ'),
                     subtitle: Text(_deadline == null
                         ? 'Not set / নির্ধারিত নয়'
                         : '${_deadline!.day}/${_deadline!.month}/${_deadline!.year}'),
                     trailing: TextButton(
                         onPressed: _pickDeadline, child: const Text('Pick / বাছাই')),
-                  ),
-                  const SizedBox(height: 12),
-                  Text('Assign to / দায়িত্ব দিন',
-                      style: Theme.of(context).textTheme.titleSmall),
-                  staff.when(
-                    loading: () => const LinearProgressIndicator(),
-                    error: (_, __) => const Text('Could not load staff.'),
-                    data: (list) => Card(
-                      child: Column(
-                        children: [
-                          for (final s in list.where((x) => x.isActive))
-                            CheckboxListTile(
-                              dense: true,
-                              value: _assignees.contains(s.id),
-                              title: Text(s.fullName),
-                              subtitle: Text(s.designation ?? ''),
-                              onChanged: (v) => setState(() {
-                                if (v == true) {
-                                  _assignees.add(s.id);
-                                } else {
-                                  _assignees.remove(s.id);
-                                }
-                              }),
-                            ),
-                        ],
-                      ),
-                    ),
                   ),
                   if (_error != null) ...[
                     const SizedBox(height: 12),
