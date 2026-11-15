@@ -37,3 +37,21 @@ Future<void> _saveToken(String token) async {
     // Try again on the next login or token refresh.
   }
 }
+
+/// Opens the in-app link carried by a push notification when the user taps it.
+/// Handles both: app in background (onMessageOpenedApp) and app closed (initial message).
+void listenPushTaps(void Function(String link) open) {
+  try {
+    void handle(RemoteMessage m) {
+      final link = m.data['link'];
+      if (link is String && link.isNotEmpty) open(link);
+    }
+
+    FirebaseMessaging.onMessageOpenedApp.listen(handle);
+    FirebaseMessaging.instance.getInitialMessage().then((m) {
+      if (m != null) handle(m);
+    }).catchError((_) {});
+  } catch (_) {
+    // Firebase not set up on this build: skip silently.
+  }
+}
