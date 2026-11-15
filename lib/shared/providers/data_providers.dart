@@ -95,6 +95,7 @@ class NotificationItem {
     required this.body,
     required this.isRead,
     required this.createdAt,
+    this.link,
   });
 
   final String id;
@@ -103,12 +104,16 @@ class NotificationItem {
   final bool isRead;
   final DateTime createdAt;
 
+  /// In-app route to open when tapped, e.g. /tasks/<id>.
+  final String? link;
+
   factory NotificationItem.fromMap(Map<String, dynamic> m) => NotificationItem(
         id: m['id'] as String,
         title: m['title'] as String,
         body: m['body'] as String?,
         isRead: m['is_read'] as bool,
         createdAt: DateTime.parse(m['created_at'] as String),
+        link: m['link'] as String?,
       );
 }
 
@@ -116,7 +121,7 @@ final notificationListProvider =
     FutureProvider.autoDispose<List<NotificationItem>>((ref) async {
   final rows = await _sb
       .from('notifications')
-      .select('id, title, body, is_read, created_at')
+      .select('id, title, body, is_read, created_at, link')
       .order('created_at', ascending: false)
       .limit(100);
   return (rows as List)

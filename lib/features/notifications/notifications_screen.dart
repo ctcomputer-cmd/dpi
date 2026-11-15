@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -14,6 +15,17 @@ class NotificationsScreen extends ConsumerWidget {
         .from('notifications')
         .update({'is_read': true}).eq('id', id);
     ref.invalidate(notificationListProvider);
+  }
+
+  /// Marks the notification read (if needed) and opens the item it is about.
+  Future<void> _open(BuildContext context, WidgetRef ref, NotificationItem n) async {
+    try {
+      if (!n.isRead) await _markRead(ref, n.id);
+    } catch (_) {
+      // Opening the item matters more than the read flag; ignore.
+    }
+    final link = n.link;
+    if (link != null && context.mounted) context.push(link);
   }
 
   @override
@@ -84,7 +96,8 @@ class NotificationsScreen extends ConsumerWidget {
                       DateFormat('dd MMM, hh:mm a').format(n.createdAt.toLocal()),
                     ].join('\n')),
                     isThreeLine: n.body != null,
-                    onTap: n.isRead ? null : () => _markRead(ref, n.id),
+                    trailing: n.link == null ? null : const Icon(Icons.chevron_right),
+                    onTap: () => _open(context, ref, n),
                   ),
                 );
               },
