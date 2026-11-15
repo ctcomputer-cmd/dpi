@@ -82,6 +82,21 @@ subprojects {
 GRADLE
 fi
 
+echo "==> Adding Firebase (push notifications) config and Gradle plugin"
+mkdir -p "$PROJECT_DIR/android/app"
+cp "$PROJECT_DIR/firebase/google-services.json" "$PROJECT_DIR/android/app/google-services.json"
+SETTINGS_FILE="$PROJECT_DIR/android/settings.gradle.kts"
+[ -f "$SETTINGS_FILE" ] || SETTINGS_FILE="$PROJECT_DIR/android/settings.gradle"
+if ! grep -q "google-services" "$SETTINGS_FILE"; then
+  if [[ "$SETTINGS_FILE" == *.kts ]]; then
+    sed -i '0,/^plugins {/s//plugins {\n    id("com.google.gms.google-services") version "4.4.2" apply false/' "$SETTINGS_FILE"
+    sed -i '0,/^plugins {/s//plugins {\n    id("com.google.gms.google-services")/' "$GRADLE_FILE"
+  else
+    sed -i "0,/^plugins {/s//plugins {\n    id 'com.google.gms.google-services' version '4.4.2' apply false/" "$SETTINGS_FILE"
+    sed -i "0,/^plugins {/s//plugins {\n    id 'com.google.gms.google-services'/" "$GRADLE_FILE"
+  fi
+fi
+
 echo "==> Fetching Dart packages"
 cd "$PROJECT_DIR"
 flutter pub get

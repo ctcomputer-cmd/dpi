@@ -1,3 +1,4 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -14,6 +15,11 @@ Future<void> main() async {
       anonKey: AppConfig.supabaseAnonKey,
     );
   }
+
+  // Push notifications. If Firebase is not set up, the app still runs.
+  try {
+    await Firebase.initializeApp();
+  } catch (_) {}
 
   runApp(const ProviderScope(child: DpiDepartmentHubApp()));
 }

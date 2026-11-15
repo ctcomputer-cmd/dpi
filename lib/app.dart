@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'core/config.dart';
+import 'shared/push_service.dart';
 import 'core/theme.dart';
 import 'features/auth/login_screen.dart';
 import 'features/auth/setup_required_screen.dart';
@@ -30,8 +31,10 @@ import 'features/meetings/meeting_form_screen.dart';
 class _AuthRefresh extends ChangeNotifier {
   _AuthRefresh() {
     if (AppConfig.isConfigured) {
-      _sub = Supabase.instance.client.auth.onAuthStateChange
-          .listen((_) => notifyListeners());
+      _sub = Supabase.instance.client.auth.onAuthStateChange.listen((state) {
+        if (state.session != null) registerPushToken();
+        notifyListeners();
+      });
     }
   }
 
