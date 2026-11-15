@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/theme.dart';
 import '../../shared/providers/data_providers.dart';
+import '../../shared/providers/directory_providers.dart';
 
 /// Dashboard: counts come from the database. RLS limits rows to what the user may see.
 class DashboardScreen extends ConsumerWidget {
@@ -12,6 +13,8 @@ class DashboardScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final stats = ref.watch(dashboardStatsProvider);
+    final roles = ref.watch(myRolesProvider).valueOrNull ?? const <String>[];
+    final isAdmin = roles.contains('super_admin') || roles.contains('principal');
 
     return Scaffold(
       appBar: AppBar(title: const Text('Dashboard / ড্যাশবোর্ড')),
@@ -56,6 +59,11 @@ class DashboardScreen extends ConsumerWidget {
                       avatar: const Icon(Icons.groups, size: 18),
                       label: const Text('Meetings / সভা'),
                       onPressed: () => context.go('/meetings')),
+                  if (isAdmin)
+                    ActionChip(
+                        avatar: const Icon(Icons.person_add_alt_1, size: 18),
+                        label: const Text('Staff / কর্মী'),
+                        onPressed: () => context.go('/teachers')),
                 ],
               ),
             ],

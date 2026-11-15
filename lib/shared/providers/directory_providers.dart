@@ -87,3 +87,11 @@ const taskStatuses = [
 ];
 
 String prettyLabel(String value) => value.replaceAll('_', ' ');
+
+/// Roles of the currently signed-in user (used to show admin-only actions).
+final myRolesProvider = FutureProvider.autoDispose<List<String>>((ref) async {
+  final uid = _sb.auth.currentUser?.id;
+  if (uid == null) return <String>[];
+  final rows = await _sb.from('user_roles').select('role').eq('user_id', uid);
+  return (rows as List).map((e) => e['role'] as String).toList();
+});
