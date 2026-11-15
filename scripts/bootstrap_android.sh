@@ -54,6 +54,30 @@ subprojects {
 }
 GRADLE
 
+echo "==> Setting compileSdk 36 for the app and all plugins (required by newer plugins)"
+sed -i 's/flutter\.compileSdkVersion/36/' "$GRADLE_FILE"
+if [[ "$ROOT_GRADLE" == *.kts ]]; then
+cat >> "$ROOT_GRADLE" <<'GRADLE'
+
+// DPI: every Android module compiles against API 36.
+subprojects {
+    afterEvaluate {
+        extensions.findByType(com.android.build.gradle.BaseExtension::class.java)?.compileSdkVersion(36)
+    }
+}
+GRADLE
+else
+cat >> "$ROOT_GRADLE" <<'GRADLE'
+
+// DPI: every Android module compiles against API 36.
+subprojects {
+    afterEvaluate {
+        extensions.findByType(com.android.build.gradle.BaseExtension)?.compileSdkVersion(36)
+    }
+}
+GRADLE
+fi
+
 echo "==> Fetching Dart packages"
 cd "$PROJECT_DIR"
 flutter pub get
