@@ -1,7 +1,11 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/theme.dart';
@@ -104,6 +108,26 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
       appBar: AppBar(
         title: const Text('Reports / রিপোর্ট'),
         actions: [
+          IconButton(
+            tooltip: 'Share CSV file / CSV ফাইল শেয়ার',
+            icon: const Icon(Icons.ios_share),
+            onPressed: () async {
+              final rows = async.valueOrNull;
+              if (rows == null || rows.isEmpty) return;
+              try {
+                final dir = await getTemporaryDirectory();
+                final stamp = DateFormat('yyyyMMdd-HHmm').format(DateTime.now());
+                final file = File('${dir.path}/dpi-report-$stamp.csv');
+                await file.writeAsString(_csv(rows));
+                await Share.shareXFiles(
+                  [XFile(file.path, mimeType: 'text/csv')],
+                  subject: 'DPI Department Hub report',
+                );
+              } catch (e) {
+                if (context.mounted) showMsg(context, 'Could not share. / শেয়ার করা যায়নি।');
+              }
+            },
+          ),
           IconButton(
             tooltip: 'Copy as CSV / CSV হিসেবে কপি',
             icon: const Icon(Icons.copy_all),
