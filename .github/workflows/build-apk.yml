@@ -4,6 +4,10 @@ name: Build Android APK
 # Requires two repository secrets (Settings → Secrets and variables → Actions):
 #   SUPABASE_URL        - Project URL (public)
 #   SUPABASE_ANON_KEY   - anon public key (public, but kept as a secret anyway)
+#   KEYSTORE_BASE64     - base64 of dpi-release.jks (permanent release signing key)
+#   KEYSTORE_PASSWORD   - keystore + key password
+#   KEY_ALIAS           - key alias (dpi)
+# Without the three KEYSTORE/KEY secrets the APK is signed with the debug key.
 # Never store the service_role key here.
 
 on:
@@ -28,6 +32,10 @@ jobs:
           cache: true
 
       - name: Generate Android platform files
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
         run: bash scripts/bootstrap_android.sh
 
       - name: Analyze

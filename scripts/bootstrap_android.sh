@@ -97,6 +97,47 @@ if ! grep -q "google-services" "$SETTINGS_FILE"; then
   fi
 fi
 
+echo "==> Release signing (permanent key from CI secrets; debug key if not set)"
+if [ -n "${KEYSTORE_BASE64:-}" ] && [ -n "${KEYSTORE_PASSWORD:-}" ] && [ -n "${KEY_ALIAS:-}" ]; then
+  echo "$KEYSTORE_BASE64" | base64 --decode > "$PROJECT_DIR/android/app/dpi-release.jks"
+  GRADLE_FILE="$GRADLE_FILE" python3 - <<'PY'
+import os, re
+path = os.environ["GRADLE_FILE"]
+src = open(path).read()
+if path.endswith(".kts"):
+    block = (
+        "signingConfigs {\n"
+        "        create(\"release\") {\n"
+        "            storeFile = file(\"dpi-release.jks\")\n"
+        "            storePassword = System.getenv(\"KEYSTORE_PASSWORD\")\n"
+        "            keyAlias = System.getenv(\"KEY_ALIAS\")\n"
+        "            keyPassword = System.getenv(\"KEYSTORE_PASSWORD\")\n"
+        "        }\n"
+        "    }\n    "
+    )
+    src = src.replace('signingConfig = signingConfigs.getByName("debug")',
+                      'signingConfig = signingConfigs.getByName("release")')
+else:
+    block = (
+        "signingConfigs {\n"
+        "        release {\n"
+        "            storeFile file('dpi-release.jks')\n"
+        "            storePassword System.getenv('KEYSTORE_PASSWORD')\n"
+        "            keyAlias System.getenv('KEY_ALIAS')\n"
+        "            keyPassword System.getenv('KEYSTORE_PASSWORD')\n"
+        "        }\n"
+        "    }\n    "
+    )
+    src = src.replace("signingConfig signingConfigs.debug",
+                      "signingConfig signingConfigs.release")
+src = re.sub(r"(\n\s*)buildTypes \{", lambda m: m.group(1) + block + "buildTypes {", src, count=1)
+open(path, "w").write(src)
+print("release signing applied to", path)
+PY
+else
+  echo "No keystore secrets found; keeping debug signing."
+fi
+
 echo "==> Fetching Dart packages"
 cd "$PROJECT_DIR"
 flutter pub get

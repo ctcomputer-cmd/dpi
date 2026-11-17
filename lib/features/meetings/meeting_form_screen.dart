@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../shared/google_meet.dart';
 import '../../shared/providers/directory_providers.dart';
 import '../../shared/providers/meeting_providers.dart';
 
@@ -38,6 +39,7 @@ class _MeetingFormScreenState extends ConsumerState<MeetingFormScreen> {
 
   bool _loading = false;
   bool _saving = false;
+  bool _creatingMeet = false;
   String? _error;
 
   bool get _isEdit => widget.meetingId != null;
@@ -91,6 +93,43 @@ class _MeetingFormScreenState extends ConsumerState<MeetingFormScreen> {
       _error = 'Could not load meeting. / সভা লোড হয়নি।';
     } finally {
       if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  /// Creates a Google Meet link for this meeting's date and time via Google Calendar.
+  Future<void> _createMeet() async {
+    final startsAt = _combine(_date, _start);
+    final endsAt = _combine(_date, _end);
+    if (!endsAt.isAfter(startsAt)) {
+      setState(() => _error = 'End time must be after start time. / শেষ সময় শুরুর পরে হতে হবে।');
+      return;
+    }
+    setState(() {
+      _creatingMeet = true;
+      _error = null;
+    });
+    try {
+      final link = await GoogleMeet.createLink(
+        title: _title.text.trim().isEmpty ? 'Meeting' : _title.text.trim(),
+        start: startsAt,
+        end: endsAt,
+      );
+      if (mounted) {
+        setState(() => _meetLink.text = link);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text('Meet link created. / মিট লিংক তৈরি হয়েছে।')),
+        );
+      }
+    } on GoogleMeetException catch (e) {
+      if (mounted) setState(() => _error = e.message);
+    } catch (_) {
+      if (mounted) {
+        setState(() => _error =
+            'Could not create Meet link. Paste it manually. / মিট লিংক তৈরি হয়নি, নিচে নিজে লিংক দিন।');
+      }
+    } finally {
+      if (mounted) setState(() => _creatingMeet = false);
     }
   }
 
@@ -317,6 +356,21 @@ class _MeetingFormScreenState extends ConsumerState<MeetingFormScreen> {
                       if (t.isEmpty || t.startsWith('https://')) return null;
                       return 'Link must start with https:// / লিংক https:// দিয়ে শুরু হতে হবে';
                     },
+                  ),
+                  const SizedBox(height: 8),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: OutlinedButton.icon(
+                      onPressed: _creatingMeet || _saving ? null : _createMeet,
+                      icon: _creatingMeet
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(strokeWidth: 2))
+                          : const Icon(Icons.videocam_outlined),
+                      label: const Text(
+                          'Create Meet link (Google account) / মিট লিংক তৈরি করুন'),
+                    ),
                   ),
                   const SizedBox(height: 12),
                   DropdownButtonFormField<String>(
