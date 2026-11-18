@@ -95,3 +95,9 @@ final myRolesProvider = FutureProvider.autoDispose<List<String>>((ref) async {
   final rows = await _sb.from('user_roles').select('role').eq('user_id', uid);
   return (rows as List).map((e) => e['role'] as String).toList();
 });
+
+/// Super admin = role `super_admin` or `hod` (Head of Department).
+/// Only super admins may add staff, edit profiles and change roles.
+/// The database enforces this (migration 0012); this only shows/hides buttons.
+bool isSuperAdmin(List<String> roles) =>
+    roles.contains('super_admin') || roles.contains('hod');

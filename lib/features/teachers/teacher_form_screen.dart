@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../core/theme.dart';
 import '../../shared/providers/data_providers.dart';
 import '../../shared/providers/directory_providers.dart';
 
@@ -35,6 +36,7 @@ class _TeacherFormScreenState extends ConsumerState<TeacherFormScreen> {
   final _phone = TextEditingController();
   final _bio = TextEditingController();
 
+  final _joiningDate = TextEditingController();
   String? _departmentId;
   final Set<String> _roles = {};
   final Set<String> _originalRoles = {};
@@ -56,7 +58,7 @@ class _TeacherFormScreenState extends ConsumerState<TeacherFormScreen> {
 
   @override
   void dispose() {
-    for (final c in [_fullName, _email, _employeeId, _designation, _phone, _bio]) {
+    for (final c in [_fullName, _email, _employeeId, _designation, _phone, _bio, _joiningDate]) {
       c.dispose();
     }
     super.dispose();
@@ -79,6 +81,7 @@ class _TeacherFormScreenState extends ConsumerState<TeacherFormScreen> {
       _designation.text = (p['designation'] as String?) ?? '';
       _phone.text = (p['phone'] as String?) ?? '';
       _bio.text = (p['bio'] as String?) ?? '';
+      _joiningDate.text = (p['joining_date'] as String?) ?? '';
       _isActive = (p['is_active'] as bool?) ?? true;
 
       for (final row in r as List) {
@@ -138,6 +141,7 @@ class _TeacherFormScreenState extends ConsumerState<TeacherFormScreen> {
       'designation': _opt(_designation.text),
       'phone': _opt(_phone.text),
       'bio': _opt(_bio.text),
+      'joining_date': _opt(_joiningDate.text),
       'department_id': _departmentId,
       'roles': _roles.toList(),
     });
@@ -154,6 +158,7 @@ class _TeacherFormScreenState extends ConsumerState<TeacherFormScreen> {
       'designation': _opt(_designation.text),
       'phone': _opt(_phone.text),
       'bio': _opt(_bio.text),
+      'joining_date': _opt(_joiningDate.text),
       'is_active': _isActive,
       'updated_by': uid,
     }).eq('id', widget.userId!);
@@ -204,10 +209,25 @@ class _TeacherFormScreenState extends ConsumerState<TeacherFormScreen> {
   @override
   Widget build(BuildContext context) {
     final departments = ref.watch(departmentListProvider);
+    final roles = ref.watch(myRolesProvider).valueOrNull ?? const <String>[];
+
+    if (!isSuperAdmin(roles)) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Staff / কর্মী')),
+        body: const Center(
+          child: Padding(
+            padding: EdgeInsets.all(24),
+            child: Text(
+                'Only a super admin can change staff information. / শুধু সুপার অ্যাডমিন কর্মীর তথ্য বদলাতে পারেন।',
+                textAlign: TextAlign.center),
+          ),
+        ),
+      );
+    }
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(_isEdit ? 'Edit staff / কর্মী সম্পাদনা' : 'Add staff / নতুন কর্মী'),
+        title: Text(_isEdit ? 'Edit staff / কর্মী সম্পাদনা' : 'Add employee / নতুন কর্মী'),
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
@@ -253,6 +273,28 @@ class _TeacherFormScreenState extends ConsumerState<TeacherFormScreen> {
                     controller: _phone,
                     keyboardType: TextInputType.phone,
                     decoration: const InputDecoration(labelText: 'Phone / ফোন'),
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: _joiningDate,
+                    readOnly: true,
+                    decoration: const InputDecoration(
+                      labelText: 'Joining date / যোগদানের তারিখ',
+                      suffixIcon: Icon(Icons.event),
+                    ),
+                    onTap: () async {
+                      final now = DateTime.now();
+                      final picked = await showDatePicker(
+                        context: context,
+                        initialDate: DateTime.tryParse(_joiningDate.text) ?? now,
+                        firstDate: DateTime(1990),
+                        lastDate: DateTime(now.year + 1),
+                      );
+                      if (picked != null) {
+                        setState(() => _joiningDate.text =
+                            '${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}');
+                      }
+                    },
                   ),
                   const SizedBox(height: 12),
                   TextFormField(
@@ -313,6 +355,7 @@ class _TeacherFormScreenState extends ConsumerState<TeacherFormScreen> {
                   ],
                   const SizedBox(height: 20),
                   FilledButton(
+                    style: FilledButton.styleFrom(backgroundColor: AppColors.secondary),
                     onPressed: _saving ? null : _save,
                     child: _saving
                         ? const SizedBox(

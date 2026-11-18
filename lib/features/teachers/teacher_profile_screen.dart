@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../core/theme.dart';
 import '../../shared/providers/directory_providers.dart';
 
 /// Profile details plus the person's assigned tasks and meeting history.
@@ -12,9 +13,19 @@ final _teacherProfileProvider =
   final sb = Supabase.instance.client;
   final p = await sb
       .from('profiles')
-      .select('full_name, designation, employee_id, email, phone, bio, is_active')
+      .select('full_name, designation, employee_id, email, phone, bio, joining_date, is_active')
       .eq('id', uid)
       .single();
+  final roleRows = await sb.from('user_roles').select('role').eq('user_id', uid);
+  final deptRows = await sb
+      .from('department_memberships')
+      .select('departments(name)')
+      .eq('user_id', uid);
+  final roles = [for (final r in roleRows as List) r['role'] as String];
+  final depts = [
+    for (final r in deptRows as List)
+      if ((r['departments'] as Map?)?['name'] != null) (r['departments'] as Map)['name'] as String,
+  ];
   final t = await sb
       .from('task_assignees')
       .select('progress_percent, status, tasks(id, title, deadline, status, deleted_at)')
@@ -32,10 +43,33 @@ final _teacherProfileProvider =
 
   return {
     'profile': Map<String, dynamic>.from(p),
+    'roles': roles,
+    'departments': depts,
     'tasks': alive(t as List, 'tasks'),
     'meetings': alive(m as List, 'meetings'),
   };
 });
+
+Widget _infoLine(IconData icon, String label, Object? value) {
+  return Padding(
+    padding: const EdgeInsets.only(bottom: 10),
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, size: 18, color: AppColors.secondary),
+        const SizedBox(width: 8),
+        SizedBox(
+          width: 120,
+          child: Text(label,
+              style: const TextStyle(fontSize: 13, color: Colors.black54, fontWeight: FontWeight.w600)),
+        ),
+        Expanded(
+          child: Text(value?.toString() ?? '—', style: const TextStyle(fontWeight: FontWeight.w600)),
+        ),
+      ],
+    ),
+  );
+}
 
 class TeacherProfileScreen extends ConsumerWidget {
   const TeacherProfileScreen({super.key, required this.userId});
@@ -46,14 +80,14 @@ class TeacherProfileScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final data = ref.watch(_teacherProfileProvider(userId));
     final roles = ref.watch(myRolesProvider).valueOrNull ?? const <String>[];
-    final isAdmin = roles.contains('super_admin') || roles.contains('principal');
     final theme = Theme.of(context);
+    final canEdit = isSuperAdmin(roles);
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Staff profile / প্রোফাইল'),
         actions: [
-          if (isAdmin)
+          if (canEdit)
             IconButton(
               tooltip: 'Edit / সম্পাদনা',
               icon: const Icon(Icons.edit_outlined),
@@ -76,6 +110,8 @@ class TeacherProfileScreen extends ConsumerWidget {
           final p = d['profile'] as Map<String, dynamic>;
           final tasks = d['tasks'] as List<Map<String, dynamic>>;
           final meetings = d['meetings'] as List<Map<String, dynamic>>;
+          final staffRoles = (d['roles'] as List<String>);
+          final depts = (d['departments'] as List<String>);
           final name = (p['full_name'] as String?) ?? '';
 
           return ListView(
@@ -93,9 +129,17 @@ class TeacherProfileScreen extends ConsumerWidget {
               if (p['designation'] != null)
                 Center(child: Text(p['designation'] as String)),
               const SizedBox(height: 16),
-              if (p['employee_id'] != null) Text('ID: ${p['employee_id']}'),
-              if (p['email'] != null) Text('Email: ${p['email']}'),
-              if (p['phone'] != null) Text('Phone: ${p['phone']}'),
+              _infoLine(Icons.badge_outlined, 'Employee ID / আইডি', p['employee_id']),
+              _infoLine(Icons.mail_outline, 'Email / ইমেইল', p['email']),
+              _infoLine(Icons.phone_outlined, 'Phone / ফোন', p['phone']),
+              _infoLine(Icons.apartment_outlined, 'Department / বিভাগ',
+                  depts.isEmpty ? null : depts.join(', ')),
+              _infoLine(Icons.event_outlined, 'Joining date / যোগদান',
+                  p['joining_date'] == null
+                      ? null
+                      : DateFormat('dd MMM yyyy').format(DateTime.parse(p['joining_date'] as String))),
+              _infoLine(Icons.verified_user_outlined, 'Roles / ভূমিকা',
+                  staffRoles.isEmpty ? null : staffRoles.map(prettyLabel).join(', ')),
               if (p['bio'] != null) ...[
                 const SizedBox(height: 8),
                 Text(p['bio'] as String),

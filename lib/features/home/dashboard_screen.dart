@@ -15,7 +15,8 @@ class DashboardScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final stats = ref.watch(dashboardStatsProvider);
     final roles = ref.watch(myRolesProvider).valueOrNull ?? const <String>[];
-    final isAdmin = roles.contains('super_admin') || roles.contains('principal');
+    final superAdmin = isSuperAdmin(roles);
+    final canReport = superAdmin || roles.contains('principal');
 
     return Scaffold(
       appBar: AppBar(title: const Text('Dashboard / ড্যাশবোর্ড')),
@@ -46,6 +47,10 @@ class DashboardScreen extends ConsumerWidget {
               ),
               const SizedBox(height: 20),
               const MyTasksSection(),
+              if (superAdmin) ...[
+                const SizedBox(height: 20),
+                const _AddStaffCard(),
+              ],
               const SizedBox(height: 20),
               Text('Quick actions / দ্রুত কাজ',
                   style: Theme.of(context).textTheme.titleMedium),
@@ -62,12 +67,11 @@ class DashboardScreen extends ConsumerWidget {
                       avatar: const Icon(Icons.groups, size: 18),
                       label: const Text('Meetings / সভা'),
                       onPressed: () => context.go('/meetings')),
-                  if (isAdmin)
-                    ActionChip(
-                        avatar: const Icon(Icons.person_add_alt_1, size: 18),
-                        label: const Text('Staff / কর্মী'),
-                        onPressed: () => context.go('/teachers')),
-                  if (isAdmin)
+                  ActionChip(
+                      avatar: const Icon(Icons.badge_outlined, size: 18),
+                      label: const Text('Staff directory / কর্মী তালিকা'),
+                      onPressed: () => context.go('/teachers')),
+                  if (canReport)
                     ActionChip(
                         avatar: const Icon(Icons.bar_chart, size: 18),
                         label: const Text('Reports / রিপোর্ট'),
@@ -76,6 +80,74 @@ class DashboardScreen extends ConsumerWidget {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Shown to super admins only: where to add a new employee and what to enter.
+class _AddStaffCard extends StatelessWidget {
+  const _AddStaffCard();
+
+  @override
+  Widget build(BuildContext context) {
+    const fields = [
+      'Full name / পূর্ণ নাম',
+      'Email (login link is sent here) / ইমেইল',
+      'Employee ID / কর্মী আইডি',
+      'Designation / পদবি',
+      'Department / বিভাগ',
+      'Phone / ফোন',
+      'Joining date / যোগদানের তারিখ',
+      'Roles / ভূমিকা',
+      'Short bio / সংক্ষিপ্ত পরিচিতি',
+    ];
+    return Card(
+      color: AppColors.secondary.withOpacity(0.06),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.person_add_alt_1, color: AppColors.secondary),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text('Add new employee / নতুন কর্মী যোগ করুন',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.secondary,
+                          )),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            const Text('Enter these details / এই তথ্যগুলো লিখুন:',
+                style: TextStyle(fontSize: 13, color: Colors.black54)),
+            const SizedBox(height: 6),
+            for (final f in fields)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 4),
+                child: Row(
+                  children: [
+                    const Icon(Icons.circle, size: 6, color: AppColors.secondary),
+                    const SizedBox(width: 8),
+                    Expanded(child: Text(f, style: const TextStyle(fontSize: 13))),
+                  ],
+                ),
+              ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                onPressed: () => context.push('/teachers/new'),
+                icon: const Icon(Icons.add),
+                label: const Text('Add employee / কর্মী যোগ করুন'),
+              ),
+            ),
+          ],
         ),
       ),
     );

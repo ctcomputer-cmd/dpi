@@ -1,5 +1,5 @@
 // Edge Function: create a staff account (auth user + profile + roles + department).
-// Only a logged-in super_admin or principal may call it. Uses the service role
+// Only a logged-in super admin (role super_admin or hod) may call it. Uses the service role
 // key that Supabase injects server-side; the key never reaches the Flutter app.
 //
 // Deploy:  supabase functions deploy create-staff
@@ -47,7 +47,7 @@ Deno.serve(async (req) => {
     .select("role")
     .eq("user_id", callerId);
   const canCreate = (roleRows ?? []).some(
-    (r) => r.role === "super_admin" || r.role === "principal",
+    (r) => r.role === "super_admin" || r.role === "hod",
   );
   if (!canCreate) return json({ error: "Forbidden" }, 403);
 
