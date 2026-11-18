@@ -6,6 +6,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2.45.4";
 
 const ALLOWED_ROLES = [
+  "super_admin",
   "principal",
   "hod",
   "coordinator",

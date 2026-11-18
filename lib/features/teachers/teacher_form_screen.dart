@@ -8,6 +8,7 @@ import '../../shared/providers/data_providers.dart';
 import '../../shared/providers/directory_providers.dart';
 
 const _assignableRoles = [
+  'super_admin',
   'principal',
   'hod',
   'coordinator',
