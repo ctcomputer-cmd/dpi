@@ -14,6 +14,7 @@ $$;
 -- Users can no longer edit their own profile.
 drop policy if exists profiles_self_update on public.profiles;
 drop policy if exists profiles_super_admin_update on public.profiles;
+drop policy if exists profiles_super_admin_update on public.profiles;
 create policy profiles_super_admin_update on public.profiles for update
   to authenticated
   using (public.is_super_admin())
@@ -21,12 +22,14 @@ create policy profiles_super_admin_update on public.profiles for update
 
 -- Roles and department memberships: super admin only.
 drop policy if exists user_roles_admin_write on public.user_roles;
+drop policy if exists user_roles_super_admin_write on public.user_roles;
 create policy user_roles_super_admin_write on public.user_roles for all
   to authenticated
   using (public.is_super_admin())
   with check (public.is_super_admin());
 
 drop policy if exists memberships_admin_write on public.department_memberships;
+drop policy if exists memberships_super_admin_write on public.department_memberships;
 create policy memberships_super_admin_write on public.department_memberships for all
   to authenticated
   using (public.is_super_admin())
@@ -34,6 +37,7 @@ create policy memberships_super_admin_write on public.department_memberships for
 
 -- Departments: super admin only.
 drop policy if exists departments_admin_write on public.departments;
+drop policy if exists departments_super_admin_write on public.departments;
 create policy departments_super_admin_write on public.departments for all
   to authenticated
   using (public.is_super_admin())
