@@ -205,6 +205,7 @@ class _SubtaskDetailScreenState extends ConsumerState<SubtaskDetailScreen> {
           if (canManage)
             IconButton(
               tooltip: 'Delete / মুছুন',
+              color: AppColors.error,
               icon: const Icon(Icons.delete_outline),
               onPressed: _deleteSubtask,
             ),
@@ -266,18 +267,25 @@ class _SubtaskDetailScreenState extends ConsumerState<SubtaskDetailScreen> {
                 style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800),
               ),
               const SizedBox(height: 10),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
+              StateChip(state: state),
+              const SizedBox(height: 12),
+              InfoRow(
+                icon: dl.overdue ? Icons.warning_amber : Icons.event,
+                label: 'Deadline / শেষ সময়',
+                value: dl.text,
+                color: dl.color,
+              ),
+              Row(
                 children: [
-                  StateChip(state: state),
-                  Pill(
-                    text: dl.text,
-                    color: dl.color,
-                    icon: dl.overdue ? Icons.warning_amber : Icons.event,
-                  ),
+                  const Icon(Icons.groups_outlined, size: 18, color: Color(0xFF334155)),
+                  const SizedBox(width: 8),
+                  Text('Responsible / দায়িত্বে',
+                      style: const TextStyle(
+                          fontSize: 13, color: Colors.black54, fontWeight: FontWeight.w600)),
                 ],
               ),
+              const SizedBox(height: 8),
+              ResponsibleChips(names: [for (final r in d.assignees) nameOfRow(r)]),
               if (desc.isNotEmpty) ...[
                 const SizedBox(height: 12),
                 Text(desc),
@@ -303,7 +311,7 @@ class _SubtaskDetailScreenState extends ConsumerState<SubtaskDetailScreen> {
       if (mine != null) const SizedBox(height: 16),
 
       // ---- People ----
-      Text('People / দায়িত্বপ্রাপ্ত',
+      Text('Responsible people (${d.assignees.length}) / দায়িত্বপ্রাপ্ত',
           style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
       const SizedBox(height: 8),
       if (d.assignees.isEmpty)
@@ -317,8 +325,14 @@ class _SubtaskDetailScreenState extends ConsumerState<SubtaskDetailScreen> {
       const SizedBox(height: 20),
 
       // ---- Discussion for this sub-task ----
-      Text('Discussion / আলোচনা',
-          style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+      Row(
+        children: [
+          const Icon(Icons.chat_bubble_outline, size: 18, color: AppColors.secondary),
+          const SizedBox(width: 6),
+          Text('Comments / মন্তব্য',
+              style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+        ],
+      ),
       const SizedBox(height: 4),
       const Text('Updates and questions about this sub-task. / এই উপ-কাজের আপডেট ও প্রশ্ন।',
           style: TextStyle(fontSize: 12)),
@@ -378,11 +392,19 @@ class _SubtaskDetailScreenState extends ConsumerState<SubtaskDetailScreen> {
                   onPressed: locked
                       ? null
                       : () => _saveProgress(value.round(), status),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.secondary,
+                    side: const BorderSide(color: AppColors.secondary),
+                  ),
                   icon: const Icon(Icons.save_outlined),
                   label: const Text('Save progress / সংরক্ষণ'),
                 ),
                 FilledButton.icon(
                   onPressed: locked ? null : _submit,
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AppColors.success,
+                    foregroundColor: Colors.white,
+                  ),
                   icon: const Icon(Icons.send),
                   label: const Text('Submit / জমা দিন'),
                 ),
@@ -423,7 +445,7 @@ class _SubtaskDetailScreenState extends ConsumerState<SubtaskDetailScreen> {
             children: [
               Row(
                 children: [
-                  PersonAvatar(name: name, color: st.color),
+                  PersonAvatar(name: name, color: AppColors.secondary),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(name,
@@ -453,11 +475,19 @@ class _SubtaskDetailScreenState extends ConsumerState<SubtaskDetailScreen> {
                   children: [
                     OutlinedButton.icon(
                       onPressed: () => _review(uid, approve: false),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: kColorRevision,
+                        side: const BorderSide(color: kColorRevision),
+                      ),
                       icon: const Icon(Icons.replay),
                       label: const Text('Revision / সংশোধন'),
                     ),
                     FilledButton.icon(
                       onPressed: () => _review(uid, approve: true),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: AppColors.success,
+                        foregroundColor: Colors.white,
+                      ),
                       icon: const Icon(Icons.check),
                       label: const Text('Approve / অনুমোদন'),
                     ),
