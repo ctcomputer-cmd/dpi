@@ -156,6 +156,8 @@ class _TaskDetailsScreenState extends ConsumerState<TaskDetailsScreen> {
       ),
       floatingActionButton: canManage
           ? FloatingActionButton.extended(
+              backgroundColor: AppColors.secondary,
+              foregroundColor: Colors.white,
               icon: const Icon(Icons.add_task),
               label: const Text('Sub-task / উপ-কাজ'),
               onPressed: () async {
@@ -227,18 +229,31 @@ class _TaskDetailsScreenState extends ConsumerState<TaskDetailsScreen> {
                     color: priorityColor(priority),
                     icon: Icons.flag,
                   ),
-                  Pill(
-                    text: dl.text,
-                    color: dl.color,
-                    icon: dl.overdue ? Icons.warning_amber : Icons.event,
-                  ),
-                  Pill(
-                    text: 'By ${d.creatorName.isEmpty ? '-' : d.creatorName}',
-                    color: Colors.blueGrey,
-                    icon: Icons.person_outline,
-                  ),
                 ],
               ),
+              const SizedBox(height: 14),
+              InfoRow(
+                icon: dl.overdue ? Icons.warning_amber : Icons.event,
+                label: 'Deadline / শেষ সময়',
+                value: dl.text,
+                color: dl.color,
+              ),
+              InfoRow(
+                icon: Icons.person_outline,
+                label: 'Created by / তৈরি করেছেন',
+                value: d.creatorName.isEmpty ? '-' : d.creatorName,
+              ),
+              Row(
+                children: [
+                  const Icon(Icons.groups_outlined, size: 18, color: Color(0xFF334155)),
+                  const SizedBox(width: 8),
+                  Text('Responsible / দায়িত্বে',
+                      style: const TextStyle(
+                          fontSize: 13, color: Colors.black54, fontWeight: FontWeight.w600)),
+                ],
+              ),
+              const SizedBox(height: 8),
+              ResponsibleChips(names: d.responsibleNames),
               if (desc.isNotEmpty) ...[
                 const SizedBox(height: 12),
                 Text(desc),
@@ -347,10 +362,17 @@ class _TaskDetailsScreenState extends ConsumerState<TaskDetailsScreen> {
       const SizedBox(height: 20),
 
       // ---- General discussion ----
-      Text('Discussion / আলোচনা',
-          style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+      Row(
+        children: [
+          const Icon(Icons.chat_bubble_outline, size: 18, color: AppColors.secondary),
+          const SizedBox(width: 6),
+          Text('Comments / মন্তব্য',
+              style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+        ],
+      ),
       const SizedBox(height: 4),
-      const Text('Whole-task messages. For a sub-task, open it. / পুরো কাজ নিয়ে কথা। উপ-কাজের আলোচনা উপ-কাজ খুললে পাবেন।',
+      const Text(
+          'Comments about the whole task. Sub-task comments are inside each sub-task. / পুরো কাজ নিয়ে মন্তব্য। উপ-কাজের মন্তব্য উপ-কাজের ভেতরে।',
           style: TextStyle(fontSize: 12)),
       const SizedBox(height: 8),
       DiscussionSection(taskId: widget.taskId),
@@ -382,6 +404,10 @@ class _TaskDetailsScreenState extends ConsumerState<TaskDetailsScreen> {
         const SizedBox(height: 16),
         OutlinedButton.icon(
           onPressed: _deleteTask,
+          style: OutlinedButton.styleFrom(
+            foregroundColor: AppColors.error,
+            side: const BorderSide(color: AppColors.error),
+          ),
           icon: const Icon(Icons.delete_outline),
           label: const Text('Delete task / কাজ মুছুন'),
         ),
@@ -445,27 +471,27 @@ class _SubtaskCard extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 12),
-              Row(
-                children: [
-                  if (rows.isEmpty)
-                    const Text('No one assigned / কেউ নেই', style: TextStyle(fontSize: 12)),
-                  for (final r in rows.take(6))
-                    Padding(
-                      padding: const EdgeInsets.only(right: 4),
-                      child: PersonAvatar(
-                        name: nameOfRow(r),
-                        color: stateStyle(r['status'] as String).color,
-                        radius: 14,
-                      ),
-                    ),
-                  if (rows.length > 6) Text('+${rows.length - 6}'),
-                ],
-              ),
-              const SizedBox(height: 10),
+              Text('Responsible / দায়িত্বে',
+                  style: const TextStyle(
+                      fontSize: 12, color: Colors.black54, fontWeight: FontWeight.w600)),
+              const SizedBox(height: 6),
+              ResponsibleChips(names: [for (final r in rows) nameOfRow(r)]),
+              const SizedBox(height: 12),
               ProgressStrip(percent: pct, color: style.color),
               const SizedBox(height: 4),
-              Text('$pct% • ${rows.length} people / জন',
-                  style: const TextStyle(fontSize: 12)),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text('$pct% • ${rows.length} people / জন',
+                        style: const TextStyle(fontSize: 12)),
+                  ),
+                  TextButton.icon(
+                    onPressed: onTap,
+                    icon: const Icon(Icons.chat_bubble_outline, size: 18),
+                    label: const Text('Comments / মন্তব্য'),
+                  ),
+                ],
+              ),
             ],
           ),
         ),

@@ -56,26 +56,36 @@ class StateStyle {
   final IconData icon;
 }
 
+/// One colour per meaning, used everywhere in the task screens:
+/// grey = not started, blue = in progress, amber = waiting for review,
+/// purple = revision needed, green = done, red = overdue.
+const kColorNotStarted = Color(0xFF64748B);
+const kColorReview = Color(0xFFD97706);
+const kColorRevision = Color(0xFF9333EA);
+
 StateStyle stateStyle(String state) {
   switch (state) {
     case 'completed':
       return StateStyle('Completed / সম্পন্ন', AppColors.success, Icons.check_circle);
     case 'under_review':
-      return StateStyle('Under review / যাচাই চলছে', AppColors.warning, Icons.hourglass_top);
+      return StateStyle('Under review / যাচাই চলছে', kColorReview, Icons.hourglass_top);
     case 'revision_required':
-      return StateStyle('Revision / সংশোধন দরকার', const Color(0xFFEA580C), Icons.replay);
+      return StateStyle('Revision / সংশোধন দরকার', kColorRevision, Icons.replay);
     case 'in_progress':
       return StateStyle('In progress / চলছে', AppColors.secondary, Icons.autorenew);
     case 'unassigned':
-      return StateStyle('Not assigned / বরাদ্দ নেই', const Color(0xFF64748B), Icons.person_off_outlined);
+      return StateStyle('Not assigned / বরাদ্দ নেই', kColorNotStarted, Icons.person_off_outlined);
     case 'overdue':
       return StateStyle('Overdue / মেয়াদোত্তীর্ণ', AppColors.error, Icons.warning_amber);
     case 'cancelled':
       return StateStyle('Cancelled / বাতিল', Colors.grey, Icons.cancel_outlined);
     default:
-      return StateStyle('Not started / শুরু হয়নি', const Color(0xFF64748B), Icons.radio_button_unchecked);
+      return StateStyle('Not started / শুরু হয়নি', kColorNotStarted, Icons.radio_button_unchecked);
   }
 }
+
+String initialOf(String name) =>
+    name.trim().isEmpty ? '?' : name.trim().substring(0, 1).toUpperCase();
 
 /// A sub-task's state, worked out from the people assigned to it.
 String subtaskState(List<Map<String, dynamic>> rows) {
@@ -159,6 +169,15 @@ class TaskDetail {
 
   int get completedSubtasks =>
       subtasks.where((s) => subtaskState(assigneesOf(s)) == 'completed').length;
+
+  /// Everyone responsible for any sub-task, without repeats.
+  List<String> get responsibleNames {
+    final names = <String>{
+      for (final s in subtasks)
+        for (final r in assigneesOf(s)) nameOfRow(r),
+    }..removeWhere((n) => n == 'Unknown');
+    return names.toList()..sort();
+  }
 }
 
 class SubtaskDetail {
@@ -301,6 +320,96 @@ class StateChip extends StatelessWidget {
   }
 }
 
+/// A labelled line: icon, label on the left, value on the right.
+/// Used so deadline, creator and responsible people are never guessed from colour.
+class InfoRow extends StatelessWidget {
+  const InfoRow({
+    super.key,
+    required this.icon,
+    required this.label,
+    required this.value,
+    this.color,
+  });
+
+  final IconData icon;
+  final String label;
+  final String value;
+  final Color? color;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = color ?? const Color(0xFF334155);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 18, color: c),
+          const SizedBox(width: 8),
+          SizedBox(
+            width: 104,
+            child: Text(label,
+                style: const TextStyle(
+                    fontSize: 13, color: Colors.black54, fontWeight: FontWeight.w600)),
+          ),
+          Expanded(
+            child: Text(value,
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: c)),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Responsible people as named chips (initial + full name). Empty = a clear warning.
+class ResponsibleChips extends StatelessWidget {
+  const ResponsibleChips({super.key, required this.names});
+
+  final List<String> names;
+
+  @override
+  Widget build(BuildContext context) {
+    if (names.isEmpty) {
+      return const Pill(
+        text: 'No one assigned / কেউ নেই',
+        color: kColorNotStarted,
+        icon: Icons.person_off_outlined,
+      );
+    }
+    return Wrap(
+      spacing: 6,
+      runSpacing: 6,
+      children: [
+        for (final n in names)
+          Container(
+            padding: const EdgeInsets.fromLTRB(4, 4, 12, 4),
+            decoration: BoxDecoration(
+              color: AppColors.secondary.withOpacity(0.10),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircleAvatar(
+                  radius: 12,
+                  backgroundColor: AppColors.secondary,
+                  child: Text(initialOf(n),
+                      style: const TextStyle(
+                          color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700)),
+                ),
+                const SizedBox(width: 6),
+                Text(n,
+                    style: const TextStyle(
+                        fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.secondary)),
+              ],
+            ),
+          ),
+      ],
+    );
+  }
+}
+
 class ProgressStrip extends StatelessWidget {
   const ProgressStrip({super.key, required this.percent, required this.color});
 
@@ -330,14 +439,13 @@ class PersonAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final initial = name.trim().isEmpty ? '?' : name.trim().substring(0, 1).toUpperCase();
     return Tooltip(
       message: name.isEmpty ? '?' : name,
       child: CircleAvatar(
         radius: radius,
         backgroundColor: color.withOpacity(0.15),
         child: Text(
-          initial,
+          initialOf(name),
           style: TextStyle(color: color, fontWeight: FontWeight.w700),
         ),
       ),

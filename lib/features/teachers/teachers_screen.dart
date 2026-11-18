@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/theme.dart';
 import '../../shared/providers/directory_providers.dart';
 
 class TeachersScreen extends ConsumerStatefulWidget {
@@ -17,17 +18,22 @@ class _TeachersScreenState extends ConsumerState<TeachersScreen> {
   @override
   Widget build(BuildContext context) {
     final staff = ref.watch(staffListProvider);
+    final roles = ref.watch(myRolesProvider).valueOrNull ?? const <String>[];
 
     return Scaffold(
       appBar: AppBar(title: const Text('Staff / কর্মী')),
-      floatingActionButton: FloatingActionButton.extended(
-        icon: const Icon(Icons.person_add_alt_1),
-        label: const Text('Add / যোগ করুন'),
-        onPressed: () async {
-          await context.push('/teachers/new');
-          ref.invalidate(staffListProvider);
-        },
-      ),
+      floatingActionButton: isSuperAdmin(roles)
+          ? FloatingActionButton.extended(
+              backgroundColor: AppColors.secondary,
+              foregroundColor: Colors.white,
+              icon: const Icon(Icons.person_add_alt_1),
+              label: const Text('Add employee / কর্মী যোগ'),
+              onPressed: () async {
+                await context.push('/teachers/new');
+                ref.invalidate(staffListProvider);
+              },
+            )
+          : null,
       body: Column(
         children: [
           Padding(
